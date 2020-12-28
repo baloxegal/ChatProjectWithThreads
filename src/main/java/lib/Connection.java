@@ -15,7 +15,7 @@ import lib.Connection.ProxyS;
 
 import java.io.IOException;
 
-public class Connection implements Serializable, Runnable {
+public class Connection implements Serializable {
 	
 	private static final long serialVersionUID = -8026900816337050671L;
 	private transient Socket socket;
@@ -66,7 +66,7 @@ public class Connection implements Serializable, Runnable {
 			conn = new Connection(remoteHost, remotePort);
 			action.setAction(Operation.SIGN_IN, new User(in.nextLine()));
 			in.close();	
-			conn.send(action);
+			this.send(action);
 			action = (Action)conn.fetch();		
 			if(action.getOperation().equals(Operation.SUCCESS))
 				break;
@@ -77,22 +77,17 @@ public class Connection implements Serializable, Runnable {
 	@SuppressWarnings("unchecked")
 	public void getUserList(Connection conn, Action action, Map<ProxyS, User> users) throws IOException, ClassNotFoundException {
 		action.setAction(Operation.USER_LIST, null);
-		conn.send(action);
+		this.send(action);
 		action = (Action)conn.fetch();
 		if(action.getOperation().equals(Operation.SUCCESS))
 			users = (Map<ProxyS, User>)action.getTarget();
-	}
+	}	
 
 	@Override
 	public String toString() {
 		return "Connection [socket=" + socket + "]";
 	}
 	
-	@Override
-	public void run() {	
-		
-	}
-
 	public class ProxyS implements Serializable {
 
 		private static final long serialVersionUID = -8000241752157437968L;

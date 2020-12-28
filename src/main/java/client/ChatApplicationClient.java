@@ -13,6 +13,8 @@ import java.util.Scanner;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 public class ChatApplicationClient {
 	
@@ -24,12 +26,35 @@ public class ChatApplicationClient {
 
 	public static void main(String[] args) throws IOException, ClassNotFoundException {		
 			
-		conn.getAuthorizedConnection(conn, action, REMOTE_HOST, REMOTE_PORT);
-		
-		conn.getUserList(conn, action, users);
-		
+		conn.getAuthorizedConnection(conn, action, REMOTE_HOST, REMOTE_PORT);		
+		ObjectInputStream ois = new ObjectInputStream(conn.getSocket().getInputStream());
+		ObjectOutputStream ous = new ObjectOutputStream(conn.getSocket().getOutputStream());
 		Executor executor = Executors.newCachedThreadPool(Executors.defaultThreadFactory());
-		executor.execute(conn);
+		executor.execute(new Runnable(){
+			@Override
+			public void run() {
+				do {
+					try {
+						conn.getUserList(conn, action, users);
+						Thread.sleep(100);
+					} catch (ClassNotFoundException e) {
+						e.printStackTrace();
+					} catch (IOException e) {
+						e.printStackTrace();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}					
+				}while(true);
+			}
+		});		
+		executor.execute(new Runnable(){
+			@Override
+			public void run() {
+				do {
+					conn.getSocket().getChannel().	
+				}while(true);
+			}
+		});		
 		
 	}
 }

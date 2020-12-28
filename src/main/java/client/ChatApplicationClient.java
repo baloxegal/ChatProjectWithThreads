@@ -20,22 +20,25 @@ public class ChatApplicationClient {
 	
 	private static final InetAddress REMOTE_HOST = InetAddress.getLoopbackAddress();
 	private static final Integer REMOTE_PORT = 7777;
-	private static Connection conn;
-	private static Action action;
 	private static Map <Connection.ProxyS, User> users = new HashMap<Connection.ProxyS, User>();
 
-	public static void main(String[] args) throws IOException, ClassNotFoundException {		
-			
-		conn.getAuthorizedConnection(conn, action, REMOTE_HOST, REMOTE_PORT);		
-		ObjectInputStream ois = new ObjectInputStream(conn.getSocket().getInputStream());
-		ObjectOutputStream ous = new ObjectOutputStream(conn.getSocket().getOutputStream());
+	public static void main(String[] args) throws IOException, ClassNotFoundException {	
+		
+		Connection conn = new Connection();
+		Action actionUsers = null;
+		ObjectInputStream oisUsers = new ObjectInputStream(conn.getSocket().getInputStream());
+		ObjectOutputStream ousUsers = new ObjectOutputStream(conn.getSocket().getOutputStream());
+		
+		conn.getAuthorizedConnection(conn, actionUsers, REMOTE_HOST, REMOTE_PORT, oisUsers, ousUsers);
+		
+		actionUsers.setAction(Operation.USER_LIST, null);		
 		Executor executor = Executors.newCachedThreadPool(Executors.defaultThreadFactory());
 		executor.execute(new Runnable(){
 			@Override
 			public void run() {
 				do {
 					try {
-						conn.getUserList(conn, action, users);
+						conn.getUserList(actionUsers, users, oisUsers, ousUsers);
 						Thread.sleep(100);
 					} catch (ClassNotFoundException e) {
 						e.printStackTrace();
@@ -46,15 +49,29 @@ public class ChatApplicationClient {
 					}					
 				}while(true);
 			}
-		});		
+		});
+		
+		Action actionGetMessage;
+		ObjectInputStream oisMes = new ObjectInputStream(conn.getSocket().getInputStream());
 		executor.execute(new Runnable(){
 			@Override
 			public void run() {
 				do {
-					conn.getSocket().getChannel().	
+					conn.getMessage(actionGetMessage, users, oisMes);
 				}while(true);
 			}
-		});		
+		});	
+		
+		Action actionSendMessage;
+		ObjectOutputStream ousMes = new ObjectOutputStream(conn.getSocket().getOutputStream());
+		executor.execute(new Runnable(){
+			@Override
+			public void run() {
+				do {
+					conn.sendMessage(actionMes, users, dout);
+				}while(true);
+			}
+		});	
 		
 	}
 }

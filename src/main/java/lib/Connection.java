@@ -20,16 +20,16 @@ public class Connection implements Serializable {
 	private static final long serialVersionUID = -8026900816337050671L;
 	private transient Socket socket;
 		
-	private Connection(Socket socket) {
+	public Connection(Socket socket) {
 		this.socket = socket;		
 	}
 	
 	@SuppressWarnings("resource")
-	private Connection(Integer port) throws IOException {
+	public Connection(Integer port) throws IOException {
 		this(new ServerSocket(port).accept());
 	}
 	
-	private Connection(InetAddress localhost, Integer port) throws UnknownHostException, IOException {
+	public Connection(InetAddress localhost, Integer port) throws UnknownHostException, IOException {
 		this(new Socket(localhost, port));
 	}
 
@@ -45,42 +45,56 @@ public class Connection implements Serializable {
 		return new ProxyS();			
 	}
 	
-	public void send(Object object) throws IOException {
-		
-		ObjectOutputStream dout = new ObjectOutputStream(socket.getOutputStream());
+	public void send(Object object, ObjectOutputStream dout) throws IOException {
 		
 		dout.writeObject(object);		
 	}
 	
-	public Object fetch() throws IOException, ClassNotFoundException {
+	public Object fetch(ObjectInputStream din) throws IOException, ClassNotFoundException {
 		
-		ObjectInputStream din = new ObjectInputStream(socket.getInputStream());
-	
 		return din.readObject();
 	}
 	
-	public void getAuthorizedConnection(Connection conn, Action action, InetAddress remoteHost, Integer remotePort) throws UnknownHostException, IOException, ClassNotFoundException {		
+	public void getAuthorizedConnection(Connection conn, Action actionUser, InetAddress remoteHost, Integer remotePort, ObjectInputStream din, ObjectOutputStream dout) throws UnknownHostException, IOException, ClassNotFoundException {		
 		do {
 			System.out.print("Enter user name: ");
 			Scanner in = new Scanner(System.in);		
 			conn = new Connection(remoteHost, remotePort);
-			action.setAction(Operation.SIGN_IN, new User(in.nextLine()));
+			actionUser.setAction(Operation.SIGN_IN, new User(in.nextLine()));
 			in.close();	
-			this.send(action);
-			action = (Action)conn.fetch();		
-			if(action.getOperation().equals(Operation.SUCCESS))
+			this.send(actionUser, dout);
+			actionUser = (Action)conn.fetch(din);		
+			if(actionUser.getOperation().equals(Operation.SUCCESS))
 				break;
 			System.out.println("Your try to sign in is failed! Try again!");
 		}while(true);
 	}
 	
 	@SuppressWarnings("unchecked")
-	public void getUserList(Connection conn, Action action, Map<ProxyS, User> users) throws IOException, ClassNotFoundException {
-		action.setAction(Operation.USER_LIST, null);
-		this.send(action);
-		action = (Action)conn.fetch();
-		if(action.getOperation().equals(Operation.SUCCESS))
-			users = (Map<ProxyS, User>)action.getTarget();
+	public void getUserList(Action actionUser, Map<ProxyS, User> users, ObjectInputStream din, ObjectOutputStream dout) throws IOException, ClassNotFoundException {
+		this.send(actionUser, dout);
+		actionUser = (Action)this.fetch(din);
+		if(actionUser.getOperation().equals(Operation.SUCCESS))
+			users = (Map<ProxyS, User>)actionUser.getTarget();
+	}	
+	
+	public void getMessage(Action actionMes, Map<ProxyS, User> users, ObjectInputStream din) throws IOException, ClassNotFoundException {
+		actionMes = (Action)this.fetch(din);		
+		System.out.println(actionMes.getTarget());		
+	}	
+	
+	public void sendMessage(Action actionMes, Map<ProxyS, User> users, ObjectOutputStream dout) throws IOException, ClassNotFoundException {
+		System.out.print("Who is receiver: ");
+		Scanner in = new Scanner(System.in);
+		String user = in.nextLine();
+		if(users.containsValue(user)) {
+			System.out.print("Enter your message: ");
+			actionMes.setAction(Operation.SEND_MSG, user);
+			in.close();	
+			this.send(actionUser, dout);
+		}	
+		else
+			System.out.print("This receiver is offline");		
 	}	
 
 	@Override

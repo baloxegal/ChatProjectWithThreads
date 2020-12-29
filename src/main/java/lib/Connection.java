@@ -6,13 +6,8 @@ import java.net.InetAddress;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.net.UnknownHostException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
-
-import lib.Connection.ProxyS;
-
 import java.io.IOException;
 
 public class Connection implements Serializable {
@@ -29,7 +24,7 @@ public class Connection implements Serializable {
 		this(new ServerSocket(port).accept());
 	}
 	
-	public Connection(InetAddress localhost, Integer port) throws UnknownHostException, IOException {
+	public Connection(InetAddress localhost, Integer port) throws IOException{
 		this(new Socket(localhost, port));
 	}
 
@@ -55,46 +50,43 @@ public class Connection implements Serializable {
 		return din.readObject();
 	}
 	
-	public void getAuthorizedConnection(Connection conn, Action actionUser, InetAddress remoteHost, Integer remotePort, ObjectInputStream din, ObjectOutputStream dout) throws UnknownHostException, IOException, ClassNotFoundException {		
+	public void getAuthorizedConnection(User user, Action action, ObjectInputStream ois, ObjectOutputStream oos) throws IOException, ClassNotFoundException {		
 		do {
 			System.out.print("Enter user name: ");
-			Scanner in = new Scanner(System.in);		
-			conn = new Connection(remoteHost, remotePort);
-			actionUser.setAction(Operation.SIGN_IN, new User(in.nextLine()));
+			Scanner in = new Scanner(System.in);
+			user = new User(in.nextLine());
+			action.setTarget(user);
 			in.close();	
-			this.send(actionUser, dout);
-			actionUser = (Action)conn.fetch(din);		
-			if(actionUser.getOperation().equals(Operation.SUCCESS))
+			this.send(action, oos);
+			action = (Action)this.fetch(ois);		
+			if(action.getOperation().equals(Operation.SUCCESS))
 				break;
 			System.out.println("Your try to sign in is failed! Try again!");
 		}while(true);
 	}
-	
+		
 	@SuppressWarnings("unchecked")
-	public void getUserList(Action actionUser, Map<ProxyS, User> users, ObjectInputStream din, ObjectOutputStream dout) throws IOException, ClassNotFoundException {
-		this.send(actionUser, dout);
-		actionUser = (Action)this.fetch(din);
-		if(actionUser.getOperation().equals(Operation.SUCCESS))
-			users = (Map<ProxyS, User>)actionUser.getTarget();
+	public void getFromServer(Action action, Map<ProxyS, User> users, ObjectInputStream ois) throws IOException, ClassNotFoundException {
+		action = (Action)this.fetch(ois);		
+		if(action.getOperation().equals(Operation.USER_LIST))
+			users = (Map<ProxyS, User>) action.getTarget();
+		else if(action.getOperation().equals(Operation.SEND_MSG))
+			System.out.println(action.getTarget());
 	}	
 	
-	public void getMessage(Action actionMes, Map<ProxyS, User> users, ObjectInputStream din) throws IOException, ClassNotFoundException {
-		actionMes = (Action)this.fetch(din);		
-		System.out.println(actionMes.getTarget());		
-	}	
-	
-	public void sendMessage(Action actionMes, Map<ProxyS, User> users, ObjectOutputStream dout) throws IOException, ClassNotFoundException {
+	public void sendToServer(Action action, Message message, Map<ProxyS, User> users, ObjectOutputStream oos) throws IOException{
 		System.out.print("Who is receiver: ");
 		Scanner in = new Scanner(System.in);
-		String user = in.nextLine();
+		User user = new User (in.nextLine());
 		if(users.containsValue(user)) {
 			System.out.print("Enter your message: ");
-			actionMes.setAction(Operation.SEND_MSG, user);
-			in.close();	
-			this.send(actionUser, dout);
+			message.setBody(in.nextLine());
+			in.close();			
+			message.setToUser(user);
+			this.send(action, oos);						
 		}	
 		else
-			System.out.print("This receiver is offline");		
+			System.out.print("This receiver is offline!!!");		
 	}	
 
 	@Override

@@ -35,7 +35,7 @@ public class Message implements Serializable {
 		return toUser;
 	}
 
-	public void setTo(User toUser) {
+	public void setToUser(User toUser) {
 		this.toUser = toUser;
 	}
 

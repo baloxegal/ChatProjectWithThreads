@@ -2,6 +2,7 @@ package server;
 
 import java.net.Socket;
 import lib.Connection;
+import lib.Message;
 import lib.Action;
 import lib.Operation;
 import lib.User;
@@ -11,39 +12,68 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 public class ChatApplicationServer {
 	
 	public static final Integer LOCAL_PORT = 7777;
 	public static Map <Socket, User> users = new HashMap<Socket, User>();
-	public static Connection conn;
 	
 	public static void main(String[] args) throws IOException, ClassNotFoundException {		
-		conn.run();
-		Connection conn = new Connection(LOCAL_PORT);
-		Executor execution = Executors.newCachedThreadPool(Executors.defaultThreadFactory());
-		
-		Action action = new Action(null, null);
-		do{
-			execution.execute(conn = );
-			if(users.putIfAbsent(conn.getSocket(), null) == null)
-				conn.send();
-		}while(true);
-		
 				
+		Executor executor = Executors.newCachedThreadPool(Executors.defaultThreadFactory());
 		
-		Action action = (Action) conn.fetch();
+		executor.execute(new Runnable(){
+			@Override
+			public void run() {
+				Connection connUsers = new Connection();
+				ObjectInputStream ois = new ObjectInputStream(conn.getSocket().getInputStream());
+				ObjectOutputStream oos = new ObjectOutputStream(conn.getSocket().getOutputStream());
+				Action action = new Action(null, null);
+				do {
+					if(!users.isEmpty())
+						for(var u : users.keySet()) {
+							
+						}
+							
+					
+				}while(true);
+			}
+		});
 		
-		if(action.getOperation().equals(Operation.SIGN_IN)) {
-			if(users.putIfAbsent(conn, (User)action.getTarget()) == null)
-				conn.send(new Action(Operation.SUCCESS, null));
-			else
-				conn.send(new Action(Operation.ALREADY_CONNECTED, null));			
+		while(true){
+			Connection conn = new Connection(LOCAL_PORT);
+			ObjectInputStream ois = new ObjectInputStream(conn.getSocket().getInputStream());
+			ObjectOutputStream oos = new ObjectOutputStream(conn.getSocket().getOutputStream());
+			Action action = new Action(null, null);
+			executor.execute(new Runnable(){
+				@Override
+				public void run() {
+										
+					executor.execute(new Runnable(){
+						@Override
+						public void run() {
+							do {
+									
+									
+									
+							}while(true);
+						}
+					});
+						
+					executor.execute(new Runnable(){
+						@Override
+						public void run() {
+							do {
+							
+								
+								
+							}while(true);
+						}
+					});						
+				}				
+			});				
 		}
-		
-		action = (Action) conn.fetch();
-				
-		if(action.getOperation().equals(Operation.USER_LIST))
-			conn.send(new Action(Operation.SUCCESS, users));
 	}
 }

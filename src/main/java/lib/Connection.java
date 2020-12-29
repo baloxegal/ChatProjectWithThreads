@@ -88,6 +88,47 @@ public class Connection implements Serializable {
 		else
 			System.out.print("This receiver is offline!!!");		
 	}	
+	
+	@SuppressWarnings("unchecked")
+	public void getFromClient(Action action, Map<ProxyS, User> users, ObjectInputStream ois) throws IOException, ClassNotFoundException {
+		action = (Action)this.fetch(ois);		
+		if(action.getOperation().equals(Operation.USER_LIST))
+			users = (Map<ProxyS, User>) action.getTarget();
+		else if(action.getOperation().equals(Operation.SEND_MSG))
+			System.out.println(action.getTarget());
+	}	
+	
+	public void sendToClient(Action action, Message message, Map<ProxyS, User> users, ObjectOutputStream oos) throws IOException{
+		System.out.print("Who is receiver: ");
+		Scanner in = new Scanner(System.in);
+		User user = new User (in.nextLine());
+		if(users.containsValue(user)) {
+			System.out.print("Enter your message: ");
+			message.setBody(in.nextLine());
+			in.close();			
+			message.setToUser(user);
+			this.send(action, oos);						
+		}	
+		else
+			System.out.print("This receiver is offline!!!");		
+	}	
+	
+	public void sendUserList(Action action, Map<ProxyS, User> users, ObjectOutputStream oos) throws IOException{
+		if(!users.isEmpty()) {
+			for(var u : users.values()) {
+				action.setTarget(target);
+			}
+			
+			
+			System.out.print("Enter your message: ");
+			message.setBody(in.nextLine());
+			in.close();			
+			message.setToUser(user);
+			this.send(action, oos);						
+		}	
+		else
+			System.out.print("This receiver is offline!!!");		
+	}	
 
 	@Override
 	public String toString() {

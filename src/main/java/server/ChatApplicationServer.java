@@ -2,19 +2,16 @@ package server;
 
 import java.net.Socket;
 import lib.Connection;
-import lib.Connection.ProxyS;
 import lib.Message;
 import lib.Action;
 import lib.Operation;
 import lib.User;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -29,45 +26,46 @@ public class ChatApplicationServer {
 	public static void main(String[] args) throws IOException, ClassNotFoundException {		
 				
 		Executor executor = Executors.newCachedThreadPool(Executors.defaultThreadFactory());	
-		
-		new Thread(new Runnable(){
-			@Override
-			public void run() {
-				while(true) {
-					new Thread(new Runnable(){
-						@Override
-						public void run() {
-							Connection connNewUsers = null;
-							Action action = null;
-							try {
-								connNewUsers = new Connection(LOCAL_PORT);
-							} catch (IOException e) {
-								e.printStackTrace();
-							}				
-							try {
-								action = (Action) connNewUsers.fetch(new ObjectInputStream(connNewUsers.getSocket().getInputStream()));
-							} catch (ClassNotFoundException | IOException e) {
-								e.printStackTrace();
-							}
-							if(action.getOperation().equals(Operation.SIGN_IN)) {
-								User user = (User) action.getTarget();
-								if(users.putIfAbsent(user, connNewUsers.getSocket()) == null) {							
-									usersList.add(user);
-									action.setAction(Operation.SUCCESS, null);
-								}
-								else
-									action.setAction(Operation.UNSUCCESS, null);
-								try {
-									connNewUsers.send(action, new ObjectOutputStream(connNewUsers.getSocket().getOutputStream()));
-								} catch (IOException e) {
-									e.printStackTrace();
-								}											
-							}
-						}
-					});	
-				}				
-			}
-		});
+		Connection connNewUsers = new Connection(LOCAL_PORT);
+		System.out.println("FAAAAAAAAAAAAAAAAAAAA");
+//		new Thread(new Runnable(){
+//			@Override
+//			public void run() {
+//				while(true) {
+//					new Thread(new Runnable(){
+//						@Override
+//						public void run() {
+//							Connection connNewUsers = null;
+//							Action action = null;
+//							try {
+//								connNewUsers = new Connection(LOCAL_PORT);
+//							} catch (IOException e) {
+//								e.printStackTrace();
+//							}				
+//							try {
+//								action = (Action) connNewUsers.fetch(new ObjectInputStream(connNewUsers.getSocket().getInputStream()));
+//							} catch (ClassNotFoundException | IOException e) {
+//								e.printStackTrace();
+//							}
+//							if(action.getOperation().equals(Operation.SIGN_IN)) {
+//								User user = (User) action.getTarget();
+//								if(users.putIfAbsent(user, connNewUsers.getSocket()) == null) {							
+//									usersList.add(user);
+//									action.setAction(Operation.SUCCESS, null);
+//								}
+//								else
+//									action.setAction(Operation.UNSUCCESS, null);
+//								try {
+//									connNewUsers.send(action, new ObjectOutputStream(connNewUsers.getSocket().getOutputStream()));
+//								} catch (IOException e) {
+//									e.printStackTrace();
+//								}											
+//							}
+//						}
+//					});	
+//				}				
+//			}
+//		});
 		executor.execute(new Runnable(){
 			@Override
 			public void run() {

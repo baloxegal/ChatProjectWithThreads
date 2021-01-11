@@ -42,13 +42,12 @@ public class Connection implements Serializable {
 //		return new ProxyS();			
 //	}
 //	
-	public void send(Object object, ObjectOutputStream dout) throws IOException {
-		
-		dout.writeObject(object);		
+	public void send(Object object, ObjectOutputStream dout) throws IOException {		
+		dout.writeObject(object);	
+		dout.flush();
 	}
 	
 	public Object fetch(ObjectInputStream din) throws IOException, ClassNotFoundException {
-		
 		return din.readObject();
 	}
 	
@@ -57,26 +56,14 @@ public class Connection implements Serializable {
 			System.out.print("Enter your name: ");
 			Scanner in = new Scanner(System.in);
 			user = new User(in.nextLine());
-			in.close();
 			Action action = new Action(Operation.SIGN_IN, user);			
 			Connection conn = new Connection(inetAddress, port);
 			System.out.println("Super0");
 			System.out.println(conn.toString());
-			if(conn == null)
-				System.out.println("KKKKKKKKKKKK");
-			if(action == null)
-				System.out.println("AAAAAAAAAAAAAAA");
-			if(conn.getSocket() == null) {
-				System.out.println(conn.toString());
-				System.out.println(conn.getSocket().getLocalPort());
-				System.out.println(conn.getSocket().getPort());
-				System.out.println(conn.getSocket().getLocalAddress());
-				System.out.println("SSSSSSSSSSSSSSSSSSS");
-			}
 			conn.send(action, new ObjectOutputStream(conn.getSocket().getOutputStream()));
 			System.out.println("Super1");
 			action = (Action)conn.fetch(new ObjectInputStream(conn.getSocket().getInputStream()));		
-//			if(action.getOperation().equals(Operation.SUCCESS))
+			if(action.getOperation().equals(Operation.SUCCESS))
 			System.out.println("Super1");
 				return conn;				
 //			System.out.println("Your try to sign in is failed! Try again!");
@@ -86,20 +73,24 @@ public class Connection implements Serializable {
 	@SuppressWarnings("unchecked")
 	public void getFromServer(Action action, List<User> users, ObjectInputStream ois) throws IOException, ClassNotFoundException {
 		action = (Action)this.fetch(ois);		
-		if(action.getOperation().equals(Operation.USER_LIST))
+		if(action.getOperation().equals(Operation.USER_LIST)) {
 			users = (List<User>) action.getTarget();
+			for(var a : users)
+				System.out.println(a.toString());
+		}
 		else if(action.getOperation().equals(Operation.SEND_MSG))
 			System.out.println("It is the message for you " + (Message)action.getTarget());
 	}	
 	
-	public void sendToServer(Message message, Action action, List<User> users, Scanner in, ObjectOutputStream oos) throws IOException{
-		System.out.println("Who is receiver of your message: ");
-		String user = in.nextLine();
+	public void sendToServer(Message message, Action action, List<User> users, Scanner nin, ObjectOutputStream oos) throws IOException{
+		System.out.print("Who is receiver of your message: ");
+		String user = nin.nextLine();
 		if(users.stream().anyMatch(f -> f.getName().equalsIgnoreCase(user))) {
 			System.out.print("Enter your message: ");
-			message.setBody(in.nextLine());
+			message.setBody(nin.nextLine());
 			message.setToUser(users.stream().filter(f -> f.getName().equalsIgnoreCase(user)).findAny().get());
-			this.send(action, oos);						
+			this.send(action, oos);		
+			nin.close();
 		}	
 		else
 			System.out.print("This receiver is offline!!!");

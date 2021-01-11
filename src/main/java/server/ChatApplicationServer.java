@@ -26,46 +26,36 @@ public class ChatApplicationServer {
 	public static void main(String[] args) throws IOException, ClassNotFoundException {		
 				
 		Executor executor = Executors.newCachedThreadPool(Executors.defaultThreadFactory());	
-		Connection connNewUsers = new Connection(LOCAL_PORT);
+//		Connection connNewUsers = new Connection(LOCAL_PORT);
 		System.out.println("FAAAAAAAAAAAAAAAAAAAA");
-//		new Thread(new Runnable(){
-//			@Override
-//			public void run() {
-//				while(true) {
-//					new Thread(new Runnable(){
-//						@Override
-//						public void run() {
-//							Connection connNewUsers = null;
-//							Action action = null;
-//							try {
-//								connNewUsers = new Connection(LOCAL_PORT);
-//							} catch (IOException e) {
-//								e.printStackTrace();
-//							}				
-//							try {
-//								action = (Action) connNewUsers.fetch(new ObjectInputStream(connNewUsers.getSocket().getInputStream()));
-//							} catch (ClassNotFoundException | IOException e) {
-//								e.printStackTrace();
-//							}
-//							if(action.getOperation().equals(Operation.SIGN_IN)) {
-//								User user = (User) action.getTarget();
-//								if(users.putIfAbsent(user, connNewUsers.getSocket()) == null) {							
-//									usersList.add(user);
-//									action.setAction(Operation.SUCCESS, null);
-//								}
-//								else
-//									action.setAction(Operation.UNSUCCESS, null);
-//								try {
-//									connNewUsers.send(action, new ObjectOutputStream(connNewUsers.getSocket().getOutputStream()));
-//								} catch (IOException e) {
-//									e.printStackTrace();
-//								}											
-//							}
-//						}
-//					});	
-//				}				
-//			}
-//		});
+		executor.execute(new Runnable(){
+			@Override
+			public void run() {
+				while(true) {
+					executor.execute(new Runnable(){
+						@Override
+						public void run() {							
+							try {
+								Connection connNewUsers = new Connection(LOCAL_PORT);
+								Action action = (Action) connNewUsers.fetch(new ObjectInputStream(connNewUsers.getSocket().getInputStream()));
+								if(action.getOperation().equals(Operation.SIGN_IN)) {
+									User user = (User) action.getTarget();
+									if(users.putIfAbsent(user, connNewUsers.getSocket()) == null) {							
+										usersList.add(user);
+										action.setAction(Operation.SUCCESS, null);
+									}								
+									else
+										action.setAction(Operation.UNSUCCESS, null);							
+									connNewUsers.send(action, new ObjectOutputStream(connNewUsers.getSocket().getOutputStream()));
+								}	
+							} catch (ClassNotFoundException | IOException e) {
+								e.printStackTrace();
+							}
+						}				
+					});
+				}				
+			}
+		});
 		executor.execute(new Runnable(){
 			@Override
 			public void run() {

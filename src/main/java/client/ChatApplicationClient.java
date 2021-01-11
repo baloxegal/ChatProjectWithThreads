@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -25,16 +26,32 @@ public class ChatApplicationClient {
 	public static void main(String[] args) throws IOException, ClassNotFoundException {		
 		
 		Connection conn = Connection.getAuthorizedConnection(REMOTE_HOST, REMOTE_PORT, user);
-		System.out.println("Super1");
-		Executor executor = Executors.newCachedThreadPool(Executors.defaultThreadFactory());
+	
+		System.out.println("Super10");
+//		Executor executor = Executors.newCachedThreadPool(Executors.defaultThreadFactory());
+		Executor executor = Executors.newCachedThreadPool();
+		System.out.println("Super100");
+		Action action = null;
+		System.out.println("Super1000");
+		System.out.println(conn.getSocket());
+		System.out.println(conn.toString());
+//		ObjectInputStream ois = new ObjectInputStream(conn.getSocket().getInputStream());
+		System.out.println(conn.getSocket().isInputShutdown());
+		System.out.println(conn.getSocket().isClosed());
+		System.out.println(conn.getSocket().isConnected());
+		System.out.println();
+//		System.out.println(ois.toString());
+		System.out.println(conn.getSocket());
+		System.out.println(conn.toString());
+		System.out.println("Super10000");
 		executor.execute(new Runnable(){
-			Action action;
-			ObjectInputStream ois = new ObjectInputStream(conn.getSocket().getInputStream());			
+				
 			@Override
 			public void run() {				
 				while(true) {
 					try {
-						conn.getFromServer(action, users, ois);
+						System.out.println("Super100");
+						conn.getFromServer(action, users, new ObjectInputStream(conn.getSocket().getInputStream()));
 					} catch (ClassNotFoundException e) {
 						e.printStackTrace();
 					} catch (IOException e) {
@@ -43,17 +60,20 @@ public class ChatApplicationClient {
 				}
 			}
 		});
+		Message message = new Message(null, user, null);
+		Action actionA = new Action(Operation.SEND_MSG, message);
 		
+		Scanner nin = new Scanner(System.in);
+		nin.reset();
+		ObjectOutputStream oos = new ObjectOutputStream(conn.getSocket().getOutputStream());
+		System.out.println("Super1000000");
 		executor.execute(new Runnable(){
-			Message message = new Message(null, user, null);
-			Action action = new Action(Operation.SEND_MSG, message);
-			Scanner in = new Scanner(System.in);
-			ObjectOutputStream oos = new ObjectOutputStream(conn.getSocket().getOutputStream());
+			
 			@Override
 			public void run() {
 				while(true) {
 					try {
-						conn.sendToServer(message, action, users, in, oos);
+						conn.sendToServer(message, actionA, users, nin, oos);
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
